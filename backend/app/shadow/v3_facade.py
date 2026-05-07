@@ -24,33 +24,22 @@ from .governance.governance_engine import GovernanceEngine, GovernanceAction
 
 @dataclass
 class ChainAuditRequest:
-    """
-    V3 批量工具调用链审计请求
-    （相比 V2 的单次 ToolCallRequest，V3 管理的是一个完整会话的调用链）
-    """
+    """V3 批量工具调用链审计请求"""
     session_id: str
     agent_id: str = "unknown"
-    # 本次审计包含的多个工具调用记录（每个 record = V2 的 audit 结果）
     tool_call_records: list[dict] = field(default_factory=list)
 
 
 @dataclass
 class ChainAuditResult:
-    """
-    V3 审计结果：包含 V2 结果 + V3 因果治理结果
-    """
+    """V3 审计结果：包含 V2 结果 + V3 因果治理结果"""
     session_id: str
-    # ── V2 结果 ──
-    v2_summary: dict                     # V2 的影子审计统计
-    # ── Layer 1：行为图 ──
-    behavior_graph: dict                  # AgentBehaviorGraph.to_graph_dict()
-    # ── Layer 2：因果分析 ──
-    causality_report: dict                # CausalityEngine.get_report()
-    # ── Layer 3：治理决策 ──
-    governance_report: dict               # GovernanceEngine.get_governance_report()
-    # ── 综合治理结论 ──
-    overall_risk_level: str               # safe / low / medium / high / critical
-    governance_summary: str               # 自然语言总结
+    v2_summary: dict
+    behavior_graph: dict
+    causality_report: dict
+    governance_report: dict
+    overall_risk_level: str
+    governance_summary: str
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -71,11 +60,8 @@ class AgentShieldV3:
 
     def __init__(self, session_id: str = "unknown"):
         self.session_id = session_id
-        # Layer 1：行为图谱
         self.graph = AgentBehaviorGraph(session_id=session_id)
-        # 缓存已处理的 tool_call，避免重复
         self._processed_count = 0
-        # 治理结果
         self._governance_report: Optional[dict] = None
         self._causality_report: Optional[dict] = None
 
@@ -95,23 +81,7 @@ class AgentShieldV3:
     ) -> BehaviorNode:
         """
         将一次工具调用（及其审计结果）加入行为图谱。
-        每次 V2 的 ToolCallAuditEngine.audit() 完成后，调用此方法记录到 V3 图谱。
-
-        Args:
-            agent_id: 调用者 Agent ID
-            tool_name: 工具名
-            params_summary: 参数脱敏摘要（用于图谱展示）
-            fuse_action: V2 的熔断决策（allow/block/human_review）
-            shadow_risk_score: V2 的影子风险评分
-            parent_agent_id: 父节点（触发此调用的上游 Agent），用于建立边
-            edge_type: 边类型（calls/invokes/data_flow/returns）
-            inherited_risk: 该节点从上游继承的风险量
-            labels: 额外标签
-
-        Returns:
-            BehaviorNode: 新增/更新的图节点
         """
-        # 找 parent_node_id（同一个 session 中该 agent 的上一个节点）
         parent_node_id = self._find_latest_node_by_agent(parent_agent_id or agent_id)
 
         node = self.graph.add_tool_call_as_node(
@@ -129,16 +99,7 @@ class AgentShieldV3:
         return node
 
     def audit_chain(self, request: ChainAuditRequest) -> ChainAuditResult:
-        """
-        完整审计入口：接收一组 V2 审计记录，运行 V3 三层分析，返回综合报告。
-
-        Args:
-            request: ChainAuditRequest，包含多个 V2 audit 结果
-
-        Returns:
-            ChainAuditResult: 完整的 V2+V3 审计结果
-        """
-        # ── Step 1: 将所有 V2 记录导入行为图 ─────────────────
+        """完整审计入口"""
         for record in request.tool_call_records:
             self.add_tool_call(
                 agent_id=record.get("agent_id", "unknown"),
@@ -152,16 +113,13 @@ class AgentShieldV3:
                 labels=record.get("labels", []),
             )
 
-        # ── Step 2: Layer 2 因果分析 ─────────────────────────
         causality_engine = CausalityEngine(self.graph)
         self._causality_report = causality_engine.analyze()
 
-        # ── Step 3: Layer 3 治理决策 ──────────────────────────
         governance_engine = GovernanceEngine(self.graph, self._causality_report)
         governance_engine.govern()
         self._governance_report = governance_engine.get_governance_report()
 
-        # ── Step 4: 生成综合治理结论 ─────────────────────────
         overall_risk = self._compute_overall_risk()
         summary = self._generate_summary()
 
@@ -177,7 +135,8 @@ class AgentShieldV3:
 
     def run_governance(self) -> dict:
         """
-        在已有图谱上运行完整的 V3 分析（用于流式追加场景）
+        在已有图谱上运行完整的 V3 分析（用于流式追加场景）。
+        返回治理报告 dict。
         """
         causality_engine = CausalityEngine(self.graph)
         self._causality_report = causality_engine.analyze()

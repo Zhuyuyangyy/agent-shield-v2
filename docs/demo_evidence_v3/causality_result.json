@@ -1,0 +1,60 @@
+{
+  "graph_summary": {
+    "session_id": "sess_financial_001",
+    "total_nodes": 5,
+    "total_edges": 4,
+    "risk_distribution": {
+      "safe": 2,
+      "low": 0,
+      "medium": 0,
+      "high": 2,
+      "critical": 1
+    },
+    "critical_node_count": 0,
+    "blocked_count": 1,
+    "review_count": 0
+  },
+  "critical_chains": [
+    {
+      "chain_id": "chain_node_988",
+      "root_agent": "FinancialAgent",
+      "terminal_risk": 0.98,
+      "amplification": 1.0,
+      "weak_links": [],
+      "trajectory": [
+        0.05,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root_cause_attributions": [
+    {
+      "node_id": "node_7c49b7d8",
+      "agent_id": "FinancialAgent",
+      "responsibility": 1.0,
+      "direct": 0.75,
+      "inherited": 0.025,
+      "chain_length": 2,
+      "explanation": "Agent FinancialAgent 的 cursor.execute （风险分 0.05）导致下游 Agent CustomerDataAgent 的 cursor.execute 风险上升至 0.75。继承风险 0.03，因果链长度 2。"
+    },
+    {
+      "node_id": "node_d6748d72",
+      "agent_id": "FinancialAgent",
+      "responsibility": 0.98,
+      "direct": 0.82,
+      "inherited": 0.05,
+      "chain_length": 2,
+      "explanation": "Agent FinancialAgent 的 cursor.execute （风险分 0.05）导致下游 Agent DataExportAgent 的 export_csv 风险上升至 0.82。继承风险 0.05，因果链长度 2。"
+    },
+    {
+      "node_id": "node_9884119f",
+      "agent_id": "CustomerDataAgent",
+      "responsibility": 0.045,
+      "direct": 0.98,
+      "inherited": 0.55,
+      "chain_length": 3,
+      "explanation": "Agent CustomerDataAgent 的 cursor.execute （风险分 0.75）导致下游 Agent EmailAgent 的 send_email 风险上升至 0.98。继承风险 0.55，因果链长度 3。"
+    }
+  ]
+}
