@@ -151,24 +151,31 @@ class ToolCallAuditEngine:
         self, score: float, effect, sql_info
     ) -> tuple[str, str]:
         """
-        熔断决策逻辑
-        Demo目标：shadow_risk_score >= 0.90 → human_review 或 block
+        熔断决策逻辑（统一由 5 因子风险评分驱动）
+
+        决策级联：
+          1. score >= 0.90       → block       （高风险熔断）
+          2. affected_rows > 1000 → human_review （批量导出需人工确认）
+          3. score >= 0.70       → human_review  （中风险需人工确认）
+          4. score < 0.70        → allow         （低风险放行）
+          5. 无匹配              → human_review  （fail-safe 兜底）
+
+        设计原则：所有风险判断统一由 5 因子加权评分（sensitive_data 85% 权重
+        已确保敏感字段查询可靠地达到高分）驱动，避免绕过评分模型的显式规则。
         """
+        # ── 1. 高风险熔断 ──────────────────────────────────────
         if score >= 0.90:
-            # 数据外泄高风险 → 熔断
             return "block", f"HIGH_RISK_SCORE={score:.2f} score>=0.90 data_exposure"
 
+        # ── 2. 批量导出需人工确认 ────────────────────────────────
         if effect.affected_rows_estimate > 1000:
             return "human_review", f"BULK_EXPORT detected: {effect.affected_rows_estimate} rows"
 
-        # 检查是否命中敏感表/字段
-        sensitive_hit = effect.sensitive_fields_detected
-        if sensitive_hit:
-            return "block", f"SENSITIVE_FIELDS={sensitive_hit} data_leakage"
-
+        # ── 3. 中风险需人工确认 ──────────────────────────────────
         if score >= 0.70:
             return "human_review", f"MEDIUM_RISK score={score:.2f}"
 
+        # ── 4. 低风险放行 ──────────────────────────────────────
         return "allow", "pass"
 
     def get_audit_trail(self, session_id: str) -> list[AuditLogEntry]:

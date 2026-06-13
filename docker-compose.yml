@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  agent-shield-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent-shield-v2
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - audit-logs:/app/logs
+
+  # Optional: Redis for distributed audit log storage
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: agent-shield-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+
+volumes:
+  audit-logs:
+  # redis-data:

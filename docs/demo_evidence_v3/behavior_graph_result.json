@@ -1,0 +1,86 @@
+{
+  "session_id": "sess_financial_001",
+  "nodes": [
+    {
+      "node_id": "node_0ff79063",
+      "agent_id": "FinancialAgent",
+      "tool_name": "cursor.execute",
+      "fuse_action": "allow",
+      "risk_score": 0.05,
+      "risk_status": "safe",
+      "inherited_risk": 0.0,
+      "intervention_count": 0
+    },
+    {
+      "node_id": "node_7c49b7d8",
+      "agent_id": "CustomerDataAgent",
+      "tool_name": "cursor.execute",
+      "fuse_action": "allow",
+      "risk_score": 0.75,
+      "risk_status": "high",
+      "inherited_risk": 0.025,
+      "intervention_count": 0
+    },
+    {
+      "node_id": "node_9884119f",
+      "agent_id": "EmailAgent",
+      "tool_name": "send_email",
+      "fuse_action": "block",
+      "risk_score": 0.98,
+      "risk_status": "critical",
+      "inherited_risk": 0.55,
+      "intervention_count": 0
+    },
+    {
+      "node_id": "node_d6748d72",
+      "agent_id": "DataExportAgent",
+      "tool_name": "export_csv",
+      "fuse_action": "allow",
+      "risk_score": 0.82,
+      "risk_status": "high",
+      "inherited_risk": 0.05,
+      "intervention_count": 0
+    },
+    {
+      "node_id": "node_c7a37658",
+      "agent_id": "LoggerAgent",
+      "tool_name": "log_event",
+      "fuse_action": "allow",
+      "risk_score": 0.01,
+      "risk_status": "safe",
+      "inherited_risk": 0.08,
+      "intervention_count": 0
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "edge_7fd1f8e2",
+      "from": "node_0ff79063",
+      "to": "node_7c49b7d8",
+      "type": "calls",
+      "risk_flow": 0.75
+    },
+    {
+      "edge_id": "edge_8063ca53",
+      "from": "node_7c49b7d8",
+      "to": "node_9884119f",
+      "type": "data_flow",
+      "risk_flow": 0.98
+    },
+    {
+      "edge_id": "edge_38047210",
+      "from": "node_0ff79063",
+      "to": "node_d6748d72",
+      "type": "calls",
+      "risk_flow": 0.82
+    },
+    {
+      "edge_id": "edge_e2755597",
+      "from": "node_d6748d72",
+      "to": "node_c7a37658",
+      "type": "calls",
+      "risk_flow": 0.01
+    }
+  ],
+  "critical_nodes": []
+}

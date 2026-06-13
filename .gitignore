@@ -15,4 +15,4 @@ htmlcov/
 .ruff_cache/
 node_modules/
 
-docs/
+# docs/ is tracked - do not ignore

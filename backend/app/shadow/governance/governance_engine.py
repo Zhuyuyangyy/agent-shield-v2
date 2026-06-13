@@ -73,8 +73,6 @@ class WhatIfScenario:
     causal_chain_after: list[str]       # 变更后的因果链（预测）
     recommendation: str                 # 建议采纳吗？
     confidence: float = 0.7             # 预测置信度
-    recommendation: str                 # 建议采纳吗？
-    confidence: float = 0.7             # 预测置信度
     timestamp: datetime = field(default_factory=datetime.now)
 
 
